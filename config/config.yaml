@@ -1,0 +1,16 @@
+rosbag_path: "/home/gaoyi"
+lidar_en: 4
+lidar_topic: [
+  "/nav/livox/lidar_192_168_2_205", 
+  "/nav/livox/lidar_192_168_2_204",
+  "/nav/livox/lidar_192_168_2_203",
+  "/nav/livox/lidar_192_168_2_202"
+]
+imu_en: 5
+imu_topic: [
+  "/nav/livox/imu_192_168_2_205",
+  "/nav/livox/imu_192_168_2_204",
+  "/nav/livox/imu_192_168_2_203",
+  "/nav/livox/imu_192_168_2_202",
+  "/nav/imu/data"
+]
