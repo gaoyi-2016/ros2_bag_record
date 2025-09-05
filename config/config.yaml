@@ -14,3 +14,7 @@ imu_topic: [
   "/nav/livox/imu_192_168_2_202",
   "/nav/imu/data"
 ]
+pose_en: 1
+pose_topic: [
+  "/nav/global_pose"
+]

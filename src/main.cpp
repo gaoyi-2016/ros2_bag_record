@@ -1,6 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "rosbag2_cpp/writer.hpp"
 #include "rosbag2_cpp/writers/sequential_writer.hpp"
 
@@ -28,7 +29,7 @@ public:
 
     // lidar
     lidar_en_ = config["lidar_en"].as<int>();
-    lidar_topic_ =config["lidar_topic"].as<std::vector<std::string>>();
+    lidar_topic_ = config["lidar_topic"].as<std::vector<std::string>>();
 
     RCLCPP_INFO(this->get_logger(), "lidar_en: %d", lidar_en_);
     for(int i = 0; i < lidar_en_; i++)
@@ -38,12 +39,22 @@ public:
 
     // imu
     imu_en_ = config["imu_en"].as<int>();
-    imu_topic_ =config["imu_topic"].as<std::vector<std::string>>();
+    imu_topic_ = config["imu_topic"].as<std::vector<std::string>>();
 
     RCLCPP_INFO(this->get_logger(), "imu_en: %d", imu_en_);
     for(int i = 0; i < imu_en_; i++)
     {
       RCLCPP_INFO(this->get_logger(), "imu_topic_%d: %s", i, imu_topic_[i].c_str());
+    }
+
+    // pose
+    pose_en_ = config["pose_en"].as<int>();
+    pose_topic_ = config["pose_topic"].as<std::vector<std::string>>();
+
+    RCLCPP_INFO(this->get_logger(), "pose_en: %d", pose_en_);
+    for(int i = 0; i < pose_en_; i++)
+    {
+      RCLCPP_INFO(this->get_logger(), "pose_topic_%d: %s", i, pose_topic_[i].c_str());
     }
 
     // rosbag_writer
@@ -69,6 +80,17 @@ public:
         imu_topic_[i],
         rclcpp::SensorDataQoS(),
         [this, i](const sensor_msgs::msg::Imu::ConstSharedPtr msg) {this->subscribe_imu(msg, i);}
+      );
+    }
+
+    // sub_pose
+    sub_pose_.resize(pose_en_);
+    for(int i = 0; i < pose_en_; i++)
+    {
+      sub_pose_[i] = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+        pose_topic_[i],
+        rclcpp::SensorDataQoS().reliable(),
+        [this, i](const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg) {this->subscribe_pose(msg, i);}
       );
     }
 
@@ -107,13 +129,24 @@ private:
     rosbag_writer_->write<sensor_msgs::msg::Imu>(*msg, imu_topic_[num], msg->header.stamp);
   }
 
+  void subscribe_pose(const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg, int num)
+  {
+    // builtin_interfaces::msg::Time stamp_time = msg->header.stamp;
+    // double timestamp = stamp_time.sec + stamp_time.nanosec * 1e-9;
+
+    // RCLCPP_INFO(this->get_logger(), "imu_topic[%d] timestamp[%f]", num, timestamp);
+
+    rosbag_writer_->write<geometry_msgs::msg::PoseStamped>(*msg, "/pose_" + std::to_string(num), msg->header.stamp);
+  }
+
 private:
   std::string rosbag_name_;
   std::unique_ptr<rosbag2_cpp::Writer> rosbag_writer_;
   std::vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> sub_lidar_;
   std::vector<rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr> sub_imu_;
-  int lidar_en_, imu_en_;
-  std::vector<std::string> lidar_topic_, imu_topic_;
+  std::vector<rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr> sub_pose_;
+  int lidar_en_, imu_en_, pose_en_;
+  std::vector<std::string> lidar_topic_, imu_topic_, pose_topic_;
 };
 
 int main(int argc, char * argv[])
